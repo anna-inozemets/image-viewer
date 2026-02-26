@@ -111,6 +111,7 @@ const container = document.getElementById('draggableContainer');
                 updatePosition(scaleValue, touches[0].clientX - startX, touches[0].clientY - startY);
             } else if (touches.length === 2 && initialPinchDistance > 0) {
                 const currentDist = calculateDistance(touches);
+                if (Math.abs(currentDist - initialPinchDistance) < 5) return;
                 const newScale = Math.min(maxScale, Math.max(1, initialPinchScale * (currentDist / initialPinchDistance)));
 
                 const rect = container.getBoundingClientRect();
@@ -124,7 +125,9 @@ const container = document.getElementById('draggableContainer');
 
         container.addEventListener('touchend', (e) => {
             const now = Date.now();
-            if (now - lastTouchTime < 300) {
+            const timeBetweenTouching = now - lastTouchTime;
+
+            if (timeBetweenTouching < 300 && e.touches.length === 0) {
                 const t = e.changedTouches[0];
                 handleDoubleInteraction(t.clientX, t.clientY);
             }
@@ -132,6 +135,7 @@ const container = document.getElementById('draggableContainer');
             
             isDragging = false;
             initialPinchDistance = 0;
+            initialPinchScale = 1;
         });
 
         // Мышь (для тестов на ПК)
