@@ -1,245 +1,220 @@
-// const container = document.getElementById('draggableContainer');
-//         const img = document.getElementById('draggableImage');
-//         const debug = document.getElementById('debug');
-
-//         // Конфигурация
-//         const maxScale = 5;
-        
-//         // Состояние
-//         let scaleValue = 1;
-//         let currentX = 0;
-//         let currentY = 0;
-//         let isDragging = false;
-//         let startX = 0;
-//         let startY = 0;
-
-//         // Состояние для Pinch
-//         let initialPinchDistance = 0;
-//         let initialPinchScale = 1;
-//         let lastTouchTime = 0;
-
-//         // --- ОСНОВНЫЕ ФУНКЦИИ ---
-
-//         function updatePosition(newScale, calcX, calcY) {
-//             const rect = container.getBoundingClientRect();
-//             const scaledWidth = img.offsetWidth * newScale;
-//             const scaledHeight = img.offsetHeight * newScale;
-
-//             // Clamping (ограничение перемещения)
-//             let finalX, finalY;
-
-//             if (scaledWidth > rect.width) {
-//                 finalX = Math.min(0, Math.max(calcX, rect.width - scaledWidth));
-//             } else {
-//                 finalX = (rect.width - scaledWidth) / 2;
-//             }
-
-//             if (scaledHeight > rect.height) {
-//                 finalY = Math.min(0, Math.max(calcY, rect.height - scaledHeight));
-//             } else {
-//                 finalY = (rect.height - scaledHeight) / 2;
-//             }
-
-//             // Обновляем состояние
-//             scaleValue = newScale;
-//             currentX = finalX;
-//             currentY = finalY;
-
-//             // Применяем стили
-//             img.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scaleValue})`;
-//             debug.innerText = `Scale: ${scaleValue.toFixed(2)}`;
-//         }
-
-//         function calculateDistance(touches) {
-//             return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
-//         }
-
-//         function handleDoubleInteraction(clientX, clientY) {
-//             const targetScale = scaleValue >= maxScale / 2 ? 1 : maxScale;
-//             const rect = container.getBoundingClientRect();
-            
-//             const x = clientX - rect.left;
-//             const y = clientY - rect.top;
-//             const ratio = targetScale / scaleValue;
-
-//             const newX = x - (x - currentX) * ratio;
-//             const newY = y - (y - currentY) * ratio;
-
-//             updatePosition(targetScale, newX, newY);
-//         }
-
-//         // --- ОБРАБОТЧИКИ СОБЫТИЙ ---
-
-//         // Колесико мыши
-//         container.addEventListener('wheel', (e) => {
-//             e.preventDefault();
-//             const rect = container.getBoundingClientRect();
-//             const mouseX = e.clientX - rect.left;
-//             const mouseY = e.clientY - rect.top;
-
-//             const delta = -Math.sign(e.deltaY);
-//             const step = Math.pow(1 + 0.1, delta); // 0.1 для более быстрого зума на ПК
-//             const newScale = Math.min(maxScale, Math.max(1, scaleValue * step));
-
-//             const ratio = newScale / scaleValue;
-//             updatePosition(newScale, mouseX - (mouseX - currentX) * ratio, mouseY - (mouseY - currentY) * ratio);
-//         }, { passive: false });
-
-//         // Тач события
-//         container.addEventListener('touchstart', (e) => {
-//             e.preventDefault();
-//             const touches = e.touches;
-
-//             if (touches.length === 1) {
-//                 // Drag start
-//                 isDragging = scaleValue > 1;
-//                 startX = touches[0].clientX - currentX;
-//                 startY = touches[0].clientY - currentY;
-//             } else if (touches.length === 2) {
-//                 // Pinch start
-//                 isDragging = false;
-//                 initialPinchDistance = calculateDistance(touches);
-//                 initialPinchScale = scaleValue;
-//             }
-//         }, { passive: false });
-
-//         container.addEventListener('touchmove', (e) => {
-//             e.preventDefault();
-//             const touches = e.touches;
-
-//             if (touches.length === 1 && isDragging) {
-//                 updatePosition(scaleValue, touches[0].clientX - startX, touches[0].clientY - startY);
-//             } else if (touches.length === 2 && initialPinchDistance > 0) {
-//                 const currentDist = calculateDistance(touches);
-//                 if (Math.abs(currentDist - initialPinchDistance) < 5) return;
-//                 const newScale = Math.min(maxScale, Math.max(1, initialPinchScale * (currentDist / initialPinchDistance)));
-
-//                 const rect = container.getBoundingClientRect();
-//                 const centerX = (touches[0].clientX + touches[1].clientX) / 2 - rect.left;
-//                 const centerY = (touches[0].clientY + touches[1].clientY) / 2 - rect.top;
-
-//                 const ratio = newScale / scaleValue;
-//                 updatePosition(newScale, centerX - (centerX - currentX) * ratio, centerY - (centerY - currentY) * ratio);
-//             }
-//         }, { passive: false });
-
-//         container.addEventListener('touchend', (e) => {
-//             const now = Date.now();
-//             const timeBetweenTouching = now - lastTouchTime;
-
-//             if (timeBetweenTouching < 300 && e.touches.length === 0) {
-//                 const t = e.changedTouches[0];
-//                 handleDoubleInteraction(t.clientX, t.clientY);
-//             }
-//             lastTouchTime = now;
-            
-//             isDragging = false;
-//             initialPinchDistance = 0;
-//             initialPinchScale = 1;
-//         });
-
-//         // Мышь (для тестов на ПК)
-//         container.addEventListener('mousedown', (e) => {
-//             if (scaleValue > 1) {
-//                 isDragging = true;
-//                 startX = e.clientX - currentX;
-//                 startY = e.clientY - currentY;
-//             }
-//         });
-
-//         window.addEventListener('mousemove', (e) => {
-//             if (isDragging) updatePosition(scaleValue, e.clientX - startX, e.clientY - startY);
-//         });
-
-//         window.addEventListener('mouseup', () => isDragging = false);
-
-//         // Центрируем картинку при загрузке
-//         window.onload = () => updatePosition(1, 0, 0);
-
-//elements that should be @ViewChild - change to signal
 const wrapper = document.getElementById('wrapper');
-const container = document.getElementById('draggableContainer');
-const image = document.getElementById('draggableImage');
+const photo   = document.getElementById('photo');
+const badge   = document.getElementById('badge');
 
-const pointersValue = document.getElementById('pointersValue');
-const pointerInitialDistance = document.getElementById('pointerDistance');
+// ─── Constants ────────────────────────────────────────────────────────────────
+const MIN_SCALE = 1;
+const MAX_SCALE = 5;
 
-//variables that should be input
-const maxScale = 5;
+// ─── State ────────────────────────────────────────────────────────────────────
+let scale = 1;
+let tx    = 0;   // translate X
+let ty    = 0;   // translate Y
 
-//variables that should be signal
-const isDragging = false;
-const scaleValue = 1;
-const startX = 0;
-const startY = 0;
-const currentX = 0;
-const currentY = 0;
-const initialPinchDistance = 0;
-const lastTouch = 0;
+// Pinch state — snapshots taken at the START of each gesture
+let pinchStartDist  = null;
+let pinchStartScale = null;
+let pinchStartMidX  = null;   // mid-point in wrapper coords at gesture start
+let pinchStartMidY  = null;
+let pinchStartTx    = null;   // translate at gesture start
+let pinchStartTy    = null;
 
-//is really need to use dublications?
-const initialPinchDublication = 0;
+// Single-finger drag state
+let dragPointerId = null;
+let dragLastX     = null;
+let dragLastY     = null;
 
+// Double-tap detection
+let lastTapTime = 0;
+let lastTapX    = 0;
+let lastTapY    = 0;
 
-// wrapper.addEventListener('pointerdown', (event) => {
-//     event.preventDefault();
-
-//     console.log('down', event);
-// })
-// wrapper.addEventListener('pointermove', (event) => {
-//     event.preventDefault();
-
-//     // console.log('move', event);
-// })
-// wrapper.addEventListener('pointerup', (event) => {
-//     event.preventDefault();
-
-//     // console.log('up', event);
-//     pointersValue.innerHTML = 0;
-// })
-// wrapper.addEventListener('pointercancel', (event) => {
-//     event.preventDefault();
-
-//     // console.log('cancel', event);
-// })
-
-wrapper.addEventListener('touchstart', (e) => {
-    console.log(e.touches)
-
-    pointersValue.innerHTML = e.touches.length;
-
-    if (e.touches.length === 2) {
-        const initialDistance = calculateDistance(e.touches);
-
-        pointerInitialDistance.innerHTML = initialDistance;
-    }
-    
-});
-wrapper.addEventListener('touchend', (e) => {
-    console.log(e.touches.length);
-
-    pointersValue.innerHTML = 0;
-
-    pointerInitialDistance.innerHTML = 0;
-});
-
-
-wrapper.addEventListener('wheel', (event) => {
-    event.preventDefault();
-
-    console.log('wheel', event);
-})
-wrapper.addEventListener('dblclick', (event) => {
-
-})
-
-
-function calculateDistance(touches) {
-    const leftTouch = touches[0];
-    const rightTouch = touches[1];
-
-    const distanceX = leftTouch.clientX - rightTouch.clientX;
-    const distanceY = leftTouch.clientY - rightTouch.clientY;
-
-    return Math.hypot(distanceX, distanceY);
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getTwoPointers() {
+  // Returns the two active Touch objects for the current pinch
+  // We keep a reference via the stored touches list
+  return _currentTouches;
 }
+
+function dist(t1, t2) {
+  const dx = t1.clientX - t2.clientX;
+  const dy = t1.clientY - t2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function mid(t1, t2) {
+  const rect = wrapper.getBoundingClientRect();
+  return {
+    x: (t1.clientX + t2.clientX) / 2 - rect.left,
+    y: (t1.clientY + t2.clientY) / 2 - rect.top,
+  };
+}
+
+function clamp(x, y, s) {
+  const cw = wrapper.clientWidth;
+  const ch = wrapper.clientHeight;
+  return [
+    Math.min(0, Math.max(cw  - s * cw,  x)),
+    Math.min(0, Math.max(ch  - s * ch,  y)),
+  ];
+}
+
+function applyTransform(snap = false) {
+  if (snap) {
+    photo.classList.add('snap');
+  } else {
+    photo.classList.remove('snap');
+  }
+  photo.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  badge.textContent = scale.toFixed(2) + '×';
+}
+
+// ─── Touch Start ──────────────────────────────────────────────────────────────
+wrapper.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  _currentTouches = e.touches;
+
+  if (e.touches.length === 2) {
+    // ── Entering pinch ────────────────────────────────────────────────────
+    // Cancel any ongoing drag
+    dragPointerId = null;
+
+    const [t1, t2] = [e.touches[0], e.touches[1]];
+    const m = mid(t1, t2);
+
+    // Snapshot everything at gesture START — this is the key to accuracy
+    pinchStartDist  = dist(t1, t2);
+    pinchStartScale = scale;
+    pinchStartMidX  = m.x;
+    pinchStartMidY  = m.y;
+    pinchStartTx    = tx;
+    pinchStartTy    = ty;
+
+  } else if (e.touches.length === 1) {
+    // ── Single finger — could be drag or tap ──────────────────────────────
+    const t = e.touches[0];
+    dragPointerId = t.identifier;
+    dragLastX     = t.clientX;
+    dragLastY     = t.clientY;
+  }
+}, { passive: false });
+
+// ─── Touch Move ───────────────────────────────────────────────────────────────
+let _currentTouches = [];
+
+wrapper.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  _currentTouches = e.touches;
+
+  if (e.touches.length === 2 && pinchStartDist !== null) {
+    // ── Pinch zoom ────────────────────────────────────────────────────────
+    const [t1, t2] = [e.touches[0], e.touches[1]];
+    const currentDist = dist(t1, t2);
+    const currentMid  = mid(t1, t2);
+
+    // Scale ratio always relative to START — never frame-to-frame
+    // This prevents jitter accumulation
+    const scaleRatio = currentDist / pinchStartDist;
+    const newScale   = Math.min(MAX_SCALE, Math.max(MIN_SCALE,
+                         pinchStartScale * scaleRatio));
+
+    // How much the midpoint has panned since gesture start
+    const panX = currentMid.x - pinchStartMidX;
+    const panY = currentMid.y - pinchStartMidY;
+
+    // Recalculate translate so that pinchStartMid stays under fingers
+    // Formula: newTx = startTx - startMidX*(newScale - startScale) + panX
+    let newTx = pinchStartTx - pinchStartMidX * (newScale - pinchStartScale) + panX;
+    let newTy = pinchStartTy - pinchStartMidY * (newScale - pinchStartScale) + panY;
+
+    if (newScale <= MIN_SCALE) {
+      newTx = 0;
+      newTy = 0;
+    } else {
+      [newTx, newTy] = clamp(newTx, newTy, newScale);
+    }
+
+    scale = newScale;
+    tx    = newTx;
+    ty    = newTy;
+
+    applyTransform();
+
+  } else if (e.touches.length === 1 && scale > MIN_SCALE) {
+    // ── Drag / pan ────────────────────────────────────────────────────────
+    const t = Array.from(e.touches).find(t => t.identifier === dragPointerId);
+    if (!t) return;
+
+    tx += t.clientX - dragLastX;
+    ty += t.clientY - dragLastY;
+    dragLastX = t.clientX;
+    dragLastY = t.clientY;
+
+    [tx, ty] = clamp(tx, ty, scale);
+    applyTransform();
+  }
+}, { passive: false });
+
+// ─── Touch End ────────────────────────────────────────────────────────────────
+wrapper.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  _currentTouches = e.touches;
+
+  // ── Double-tap detection ──────────────────────────────────────────────────
+  if (e.changedTouches.length === 1 && e.touches.length === 0) {
+    const t   = e.changedTouches[0];
+    const now = Date.now();
+    const dx  = t.clientX - lastTapX;
+    const dy  = t.clientY - lastTapY;
+    const sameSpot = Math.sqrt(dx * dx + dy * dy) < 30; // within 30px
+
+    if (now - lastTapTime < 300 && sameSpot) {
+      // Double tap — toggle between min and max
+      const rect = wrapper.getBoundingClientRect();
+      const cx   = t.clientX - rect.left;
+      const cy   = t.clientY - rect.top;
+      const midpoint = (MIN_SCALE + MAX_SCALE) / 2;
+
+      if (scale >= midpoint) {
+        // Zoom out to min
+        scale = MIN_SCALE;
+        tx = 0;
+        ty = 0;
+      } else {
+        // Zoom in to max toward tap point
+        const newScale = MAX_SCALE;
+        tx = cx - (cx - tx) * (newScale / scale);
+        ty = cy - (cy - ty) * (newScale / scale);
+        scale = newScale;
+        [tx, ty] = clamp(tx, ty, scale);
+      }
+
+      applyTransform(true); // snap animation
+      lastTapTime = 0; // reset so 3rd tap doesn't re-trigger
+      return;
+    }
+
+    lastTapTime = now;
+    lastTapX    = t.clientX;
+    lastTapY    = t.clientY;
+  }
+
+  // ── Reset pinch state when fingers lift ───────────────────────────────────
+  if (e.touches.length < 2) {
+    pinchStartDist  = null;
+    pinchStartScale = null;
+    pinchStartMidX  = null;
+    pinchStartMidY  = null;
+    pinchStartTx    = null;
+    pinchStartTy    = null;
+  }
+
+  if (e.touches.length === 0) {
+    dragPointerId = null;
+  }
+}, { passive: false });
+
+wrapper.addEventListener('touchcancel', (e) => {
+  pinchStartDist = null;
+  dragPointerId  = null;
+});

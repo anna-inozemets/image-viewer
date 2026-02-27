@@ -1,43 +1,40 @@
-body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-p {
-  color: white;
-  margin-left: 120px;
-  padding: 5px;
-  background-color: black;
-  border-radius: 4px;
-  width: max-content;
-}
-
-#draggableContainer {
-  width: 80vw;
-  height: auto;
+body {
+  background: #111;
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 100dvh;
   overflow: hidden;
-  touch-action: none; /* Критично для тача */
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  font-family: monospace;
 }
 
-#draggableImage {
-  max-width: 100%;
-  transform-origin: 0 0; /* Важно для математики зума */
+.wrapper {
+  position: relative;
+  width: 90vw;
+  height: 80vh;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #1a1a1a;
+  /* Critical: disable browser's native pan/zoom handling */
+  touch-action: none;
+}
+
+.wrapper img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform-origin: 0 0;
+  transform: translate(0px, 0px) scale(1);
+  /* No CSS transition during gesture — causes lag */
   will-change: transform;
-  cursor: grab;
-  
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-.info {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  color: white;
-  background: rgba(0,0,0,0.5);
-  padding: 5px 10px;
-  pointer-events: none;
-  border-radius: 4px;
+.wrapper img.snap {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
