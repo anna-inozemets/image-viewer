@@ -5,13 +5,18 @@ const badge   = document.getElementById('badge');
 const MIN_SCALE = 1;
 const MAX_SCALE = 5;
 
+/* ─────────────────────────────────────────────
+   Transform state
+───────────────────────────────────────────── */
+
 let scale = 1;
 let tx = 0;
 let ty = 0;
 
 /* ─────────────────────────────────────────────
-   Pinch state (НЕ МЕНЯЛИ ЛОГИКУ)
+   Pinch snapshot state (НЕ ТРОГАЕМ ЛОГИКУ)
 ───────────────────────────────────────────── */
+
 let pinchStartDist  = null;
 let pinchStartScale = null;
 let pinchStartMidX  = null;
@@ -19,20 +24,22 @@ let pinchStartMidY  = null;
 let pinchStartTx    = null;
 let pinchStartTy    = null;
 
-/* Drag state (touch) */
-let dragPointerId = null;
-let dragLastX     = null;
-let dragLastY     = null;
+/* ─────────────────────────────────────────────
+   Unified drag snapshot state
+───────────────────────────────────────────── */
 
-/* Double tap */
+let dragStartX  = null;
+let dragStartY  = null;
+let dragStartTx = null;
+let dragStartTy = null;
+
+/* ─────────────────────────────────────────────
+   Double tap
+───────────────────────────────────────────── */
+
 let lastTapTime = 0;
 let lastTapX    = 0;
 let lastTapY    = 0;
-
-/* Mouse drag */
-let isMouseDragging = false;
-let mouseLastX = 0;
-let mouseLastY = 0;
 
 /* ─────────────────────────────────────────────
    Helpers
@@ -65,11 +72,13 @@ function clamp(x, y, s) {
 function applyTransform(snap = false) {
   photo.classList.toggle('snap', snap);
   photo.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-  badge.textContent = scale.toFixed(2) + '×';
+  if (badge) {
+    badge.textContent = scale.toFixed(2) + '×';
+  }
 }
 
 /* ─────────────────────────────────────────────
-   Core transformation utilities
+   Core utilities
 ───────────────────────────────────────────── */
 
 function zoomAt(cx, cy, newScale, snap = false) {
@@ -107,22 +116,49 @@ function toggleZoomAt(cx, cy) {
   }
 }
 
-function panBy(dx, dy) {
-  tx += dx;
-  ty += dy;
-  [tx, ty] = clamp(tx, ty, scale);
+/* ─────────────────────────────────────────────
+   Unified drag engine (snapshot-based)
+───────────────────────────────────────────── */
+
+function startDrag(clientX, clientY) {
+  if (scale <= MIN_SCALE) return;
+
+  dragStartX  = clientX;
+  dragStartY  = clientY;
+  dragStartTx = tx;
+  dragStartTy = ty;
+}
+
+function moveDrag(clientX, clientY) {
+  if (dragStartX === null) return;
+
+  const dx = clientX - dragStartX;
+  const dy = clientY - dragStartY;
+
+  let newTx = dragStartTx + dx;
+  let newTy = dragStartTy + dy;
+
+  [newTx, newTy] = clamp(newTx, newTy, scale);
+
+  tx = newTx;
+  ty = newTy;
+
   applyTransform();
 }
 
+function endDrag() {
+  dragStartX = null;
+}
+
 /* ─────────────────────────────────────────────
-   TOUCH EVENTS (Pinch untouched)
+   TOUCH EVENTS
 ───────────────────────────────────────────── */
 
 wrapper.addEventListener('touchstart', (e) => {
   e.preventDefault();
 
   if (e.touches.length === 2) {
-    dragPointerId = null;
+    endDrag();
 
     const [t1, t2] = [e.touches[0], e.touches[1]];
     const m = mid(t1, t2);
@@ -136,9 +172,7 @@ wrapper.addEventListener('touchstart', (e) => {
 
   } else if (e.touches.length === 1) {
     const t = e.touches[0];
-    dragPointerId = t.identifier;
-    dragLastX = t.clientX;
-    dragLastY = t.clientY;
+    startDrag(t.clientX, t.clientY);
   }
 }, { passive: false });
 
@@ -176,18 +210,9 @@ wrapper.addEventListener('touchmove', (e) => {
 
     applyTransform();
 
-  } else if (e.touches.length === 1 && scale > MIN_SCALE) {
-
-    const t = Array.from(e.touches).find(t => t.identifier === dragPointerId);
-    if (!t) return;
-
-    panBy(
-      t.clientX - dragLastX,
-      t.clientY - dragLastY
-    );
-
-    dragLastX = t.clientX;
-    dragLastY = t.clientY;
+  } else if (e.touches.length === 1) {
+    const t = e.touches[0];
+    moveDrag(t.clientX, t.clientY);
   }
 }, { passive: false });
 
@@ -223,20 +248,29 @@ wrapper.addEventListener('touchend', (e) => {
   }
 
   if (e.touches.length === 0) {
-    dragPointerId = null;
+    endDrag();
   }
 }, { passive: false });
 
 wrapper.addEventListener('touchcancel', () => {
   pinchStartDist = null;
-  dragPointerId = null;
+  endDrag();
 });
 
 /* ─────────────────────────────────────────────
-   MOUSE SUPPORT
+   MOUSE EVENTS
 ───────────────────────────────────────────── */
 
-/* Wheel zoom */
+wrapper.addEventListener('mousedown', (e) => {
+  startDrag(e.clientX, e.clientY);
+});
+
+window.addEventListener('mousemove', (e) => {
+  moveDrag(e.clientX, e.clientY);
+});
+
+window.addEventListener('mouseup', endDrag);
+
 wrapper.addEventListener('wheel', (e) => {
   e.preventDefault();
 
@@ -250,32 +284,6 @@ wrapper.addEventListener('wheel', (e) => {
   zoomAt(cx, cy, scale * (1 + delta));
 }, { passive: false });
 
-/* Drag */
-wrapper.addEventListener('mousedown', (e) => {
-  if (scale <= MIN_SCALE) return;
-
-  isMouseDragging = true;
-  mouseLastX = e.clientX;
-  mouseLastY = e.clientY;
-});
-
-window.addEventListener('mousemove', (e) => {
-  if (!isMouseDragging) return;
-
-  panBy(
-    e.clientX - mouseLastX,
-    e.clientY - mouseLastY
-  );
-
-  mouseLastX = e.clientX;
-  mouseLastY = e.clientY;
-});
-
-window.addEventListener('mouseup', () => {
-  isMouseDragging = false;
-});
-
-/* Double click */
 wrapper.addEventListener('dblclick', (e) => {
   const rect = wrapper.getBoundingClientRect();
   toggleZoomAt(
