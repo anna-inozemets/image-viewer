@@ -1,15 +1,12 @@
 const wrapper = document.getElementById('wrapper');
-const photo   = document.getElementById('photo');
-const badge   = document.getElementById('badge');
+const photo = document.getElementById('photo');
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 const MIN_SCALE = 1;
 const MAX_SCALE = 5;
 
-// ─── State ────────────────────────────────────────────────────────────────────
 let scale = 1;
-let tx    = 0;   // translate X
-let ty    = 0;   // translate Y
+let tx = 0;
+let ty = 0;
 
 // Pinch state — snapshots taken at the START of each gesture
 let pinchStartDist  = null;
@@ -30,12 +27,6 @@ let lastTapX    = 0;
 let lastTapY    = 0;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function getTwoPointers() {
-  // Returns the two active Touch objects for the current pinch
-  // We keep a reference via the stored touches list
-  return _currentTouches;
-}
-
 function dist(t1, t2) {
   const dx = t1.clientX - t2.clientX;
   const dy = t1.clientY - t2.clientY;
@@ -217,4 +208,90 @@ wrapper.addEventListener('touchend', (e) => {
 wrapper.addEventListener('touchcancel', (e) => {
   pinchStartDist = null;
   dragPointerId  = null;
+});
+
+wrapper.addEventListener('wheel', (e) => {
+  e.preventDefault();
+
+  const rect = wrapper.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  const zoomIntensity = 0.01;
+  const delta = -e.deltaY * zoomIntensity;
+
+  let newScale = scale * (1 + delta);
+  newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
+
+  if (newScale === scale) return;
+
+  // формула аналогичная double tap
+  tx = cx - (cx - tx) * (newScale / scale);
+  ty = cy - (cy - ty) * (newScale / scale);
+
+  scale = newScale;
+
+  if (scale <= MIN_SCALE) {
+    tx = 0;
+    ty = 0;
+  } else {
+    [tx, ty] = clamp(tx, ty, scale);
+  }
+
+  applyTransform();
+}, { passive: false });
+
+let isMouseDragging = false;
+let mouseLastX = 0;
+let mouseLastY = 0;
+
+wrapper.addEventListener('mousedown', (e) => {
+  if (scale <= MIN_SCALE) return;
+
+  isMouseDragging = true;
+  mouseLastX = e.clientX;
+  mouseLastY = e.clientY;
+});
+
+wrapper.addEventListener('mousemove', (e) => {
+  if (!isMouseDragging) return;
+
+  tx += e.clientX - mouseLastX;
+  ty += e.clientY - mouseLastY;
+
+  mouseLastX = e.clientX;
+  mouseLastY = e.clientY;
+
+  [tx, ty] = clamp(tx, ty, scale);
+  applyTransform();
+});
+
+wrapper.addEventListener('mouseup', () => {
+  isMouseDragging = false;
+});
+
+wrapper.addEventListener('dblclick', (e) => {
+  const rect = wrapper.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  const midpoint = (MIN_SCALE + MAX_SCALE) / 2;
+
+  if (scale >= midpoint) {
+    // zoom out
+    scale = MIN_SCALE;
+    tx = 0;
+    ty = 0;
+  } else {
+    // zoom in
+    const newScale = MAX_SCALE;
+
+    tx = cx - (cx - tx) * (newScale / scale);
+    ty = cy - (cy - ty) * (newScale / scale);
+
+    scale = newScale;
+    [tx, ty] = clamp(tx, ty, scale);
+  }
+
+  applyTransform(true);
 });
