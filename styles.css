@@ -13,7 +13,7 @@ body {
 .wrapper {
   position: relative;
   width: 90vw;
-  height: 80vh;
+  height: auto;
   overflow: hidden;
   border-radius: 8px;
   background: #1a1a1a;
