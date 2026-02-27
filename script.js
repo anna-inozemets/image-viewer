@@ -161,7 +161,8 @@ const wrapper = document.getElementById('wrapper');
 const container = document.getElementById('draggableContainer');
 const image = document.getElementById('draggableImage');
 
-const pointersValue = document.getElementById('pointersValue')
+const pointersValue = document.getElementById('pointersValue');
+const pointerInitialDistance = document.getElementById('pointerDistance');
 
 //variables that should be input
 const maxScale = 5;
@@ -180,37 +181,46 @@ const lastTouch = 0;
 const initialPinchDublication = 0;
 
 
-wrapper.addEventListener('pointerdown', (event) => {
-    event.preventDefault();
+// wrapper.addEventListener('pointerdown', (event) => {
+//     event.preventDefault();
 
-    console.log('down', event);
-})
-wrapper.addEventListener('pointermove', (event) => {
-    event.preventDefault();
+//     console.log('down', event);
+// })
+// wrapper.addEventListener('pointermove', (event) => {
+//     event.preventDefault();
 
-    // console.log('move', event);
-})
-wrapper.addEventListener('pointerup', (event) => {
-    event.preventDefault();
+//     // console.log('move', event);
+// })
+// wrapper.addEventListener('pointerup', (event) => {
+//     event.preventDefault();
 
-    // console.log('up', event);
-    pointersValue.innerHTML = 0;
-})
-wrapper.addEventListener('pointercancel', (event) => {
-    event.preventDefault();
+//     // console.log('up', event);
+//     pointersValue.innerHTML = 0;
+// })
+// wrapper.addEventListener('pointercancel', (event) => {
+//     event.preventDefault();
 
-    // console.log('cancel', event);
-})
+//     // console.log('cancel', event);
+// })
 
 wrapper.addEventListener('touchstart', (e) => {
-    console.log(e.touches.length); 
+    console.log(e.touches)
 
     pointersValue.innerHTML = e.touches.length;
+
+    if (e.touches.length === 2) {
+        const initialDistance = calculateDistance(e.touches);
+
+        pointerInitialDistance.innerHTML = initialDistance;
+    }
+    
 });
 wrapper.addEventListener('touchend', (e) => {
     console.log(e.touches.length);
 
     pointersValue.innerHTML = 0;
+
+    pointerInitialDistance.innerHTML = 0;
 });
 
 
@@ -222,3 +232,14 @@ wrapper.addEventListener('wheel', (event) => {
 wrapper.addEventListener('dblclick', (event) => {
 
 })
+
+
+function calculateDistance(touches) {
+    const leftTouch = touches[0];
+    const rightTouch = touches[1];
+
+    const distanceX = leftTouch.clientX - rightTouch.clientX;
+    const distanceY = leftTouch.clientY - rightTouch.clientY;
+
+    return Math.hypot(distanceX, distanceY);
+}
