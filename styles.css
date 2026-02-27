@@ -1,5 +1,14 @@
 body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: sans-serif; }
 
+p {
+  color: white;
+  margin-left: 120px;
+  padding: 5px;
+  background-color: black;
+  border-radius: 4px;
+  width: max-content;
+}
+
 #draggableContainer {
   width: 80vw;
   height: auto;
