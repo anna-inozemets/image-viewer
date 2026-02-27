@@ -183,8 +183,7 @@ const initialPinchDublication = 0;
 wrapper.addEventListener('pointerdown', (event) => {
     event.preventDefault();
 
-    console.log('down', event.pointerId);
-    pointersValue.innerHTML = event.pointerId;
+    console.log('down', event);
 })
 wrapper.addEventListener('pointermove', (event) => {
     event.preventDefault();
@@ -202,6 +201,17 @@ wrapper.addEventListener('pointercancel', (event) => {
 
     // console.log('cancel', event);
 })
+
+wrapper.addEventListener('touchstart', (e) => {
+    console.log(e.touches.length); 
+
+    pointersValue.innerHTML = e.touches.length;
+});
+wrapper.addEventListener('touchend', (e) => {
+    console.log(e.touches.length);
+
+    pointersValue.innerHTML = 0;
+});
 
 
 wrapper.addEventListener('wheel', (event) => {

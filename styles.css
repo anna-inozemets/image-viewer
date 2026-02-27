@@ -28,6 +28,7 @@ p {
   transform-origin: 0 0; /* Важно для математики зума */
   will-change: transform;
   cursor: grab;
+  
 }
 
 .info {
